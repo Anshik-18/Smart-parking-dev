@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String?  @unique
+  name        String? 
+  number      String  @unique
+  password    String
+  cardetails        cardetails[]
+  parking           parkings[]
+  notifications     notifications[]
+}
+
+model merchant{
+  id            Int         @id @default(autoincrement())
+  name          String      
+  number        String
+  password      String
+  parkinglot    parkinglot[]
+}
+
+model cardetails{
+  id                Int       @id @default(autoincrement())
+  Carnumber         String  @unique
+  ownerid           Int 
+  user              User          @relation(fields: [ownerid], references: [id])
+  iselectric        Boolean
+  isparked          Boolean        @default(false)  
+}
+
+model parkings{
+  id              Int         @id @default(autoincrement())
+  userid          Int 
+  user            User        @relation(fields: [userid],references: [id])
+  date            DateTime      @default(now())
+  starttime       DateTime     @default(now())    
+  endtime         DateTime     @default(now())
+  totaltime       String     @default("0 hour 0 min")
+  parkingslotid   Int 
+  carnumber       String 
+  parkingslot     parkinglot     @relation(fields: [parkingslotid],references: [id])
+  status          Status
+}
+
+model nonBooking_parking {
+  id                        Int            @id @default(autoincrement())
+  startime                  DateTime      @default(now())
+  endtime                   DateTime      @default(now())
+  totaltime                 String       @default("0 Hours 0 minutes")
+  parkinglslotid            Int
+  carnumber                 String
+  parkinglot                parkinglot      @relation(fields: [parkinglslotid],references: [id])  
+}
+
+model notifications {
+  id            Int           @id @default(autoincrement())
+  timestamp     DateTime      @default(now()) 
+  title         String
+  From          String  
+  message       String
+  userid        Int 
+  readen        Boolean      @default(false)  
+  Notfifcationtype  NotificationType       @default(GENERAL)
+  user          User         @relation(fields: [userid],references: [id]) 
+
+} 
+
+// this is for the area 
+model parkinglot{
+  id                      Int         @id @default(autoincrement())
+  Name                    String       @unique
+  price                   String 
+  Adress                  String 
+  longitude               Float
+  latitude                Float
+  merchantid              Int
+  merchant                merchant    @relation(fields: [merchantid],references: [id])
+  parkings                parkings[]
+  nonBooking_parking      nonBooking_parking[]
+  totalslots              Int 
+  occupiedslots           Int     @default(0)
+  vacantslots             Int 
+  isempty                 Boolean      @default(true)
+
+}
+
+model Otp {
+  id        String   @id @default(uuid())
+  number    String   // phone number
+  
+  otp       String   // 6-digit OTP
+  expiresAt DateTime // expiry time
+  createdAt DateTime @default(now())
+}
+
+
+
+enum NotificationType {
+  BOOKING_SUCCESS
+  SLOT_OCCUPIED
+  PAYMENT_FAILED
+  GENERAL
+}
+
+enum Status {
+ Pre_booked
+ Completed
+ Cancelled
+ Parked
+
+}
