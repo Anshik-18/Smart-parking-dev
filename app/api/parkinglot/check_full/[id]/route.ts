@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import {db} from "@/lib/db";
+import { db } from "@/lib/db";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-    console.log("hi")
+interface Params {
+  params: { id: string };
+}
+
+export async function GET(req: NextRequest, { params }: Params) {
+  console.log("hi");
   const id = params.id;
-  console.log(id)
+  console.log(id);
 
   const lot = await db.parkinglot.findUnique({
-    where: { 
-      id:Number(id)
-     },
+    where: { id: Number(id) },
   });
 
   if (!lot) {
