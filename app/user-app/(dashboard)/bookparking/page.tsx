@@ -2,11 +2,17 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+interface LotDetails {
+  Name: string;
+  price: number;
+  Adress: string;
+  vacantslots: number;
+}
 
 export default function Bookparking() {
   const searchparams = useSearchParams();
   const [parking_lot_id, setParkingLotId] = useState<string | null>(null);
-  const [lotdetails, setLotDetails] = useState<any>({});
+  const [lotdetails, setLotDetails] = useState<LotDetails | null>(null);
   const [carnumber, setCarnumber] = useState("");
   const [result_status, setResultStatus] = useState<boolean | null>(null);
   const [result_message, setResultMessage] = useState("");
@@ -103,10 +109,10 @@ export default function Bookparking() {
             </h2>
 
             <div className="mb-6 bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-100">
-              <h1 className="text-xl font-semibold text-gray-800">{lotdetails.Name}</h1>
-              <p className="text-gray-600">💰 Price: ₹{lotdetails.price}</p>
-              <p className="text-gray-600">📍 Address: {lotdetails.Adress}</p>
-              <p className="text-gray-600">🚗 Available Slots: {lotdetails.vacantslots}</p>
+              <h1 className="text-xl font-semibold text-gray-800">{lotdetails?.Name}</h1>
+              <p className="text-gray-600">💰 Price: ₹{lotdetails?.price}</p>
+              <p className="text-gray-600">📍 Address: {lotdetails?.Adress}</p>
+              <p className="text-gray-600">🚗 Available Slots: {lotdetails?.vacantslots}</p>
             </div>
 
             <input
