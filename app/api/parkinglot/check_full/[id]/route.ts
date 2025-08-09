@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-interface Params {
-  params: { id: string };
-}
-
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   console.log("hi");
-  const id = params.id;
+  const { id } = await params; // Await the params
   console.log(id);
 
   const lot = await db.parkinglot.findUnique({
