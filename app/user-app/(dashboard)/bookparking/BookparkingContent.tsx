@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -189,9 +190,10 @@ export default function BookparkingContent() {
                 </p>
               </div>
             )}
+            
 
             <button
-              className="mt-6 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow hover:shadow-lg transition"
+              className="mt-6 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow hover:shadow-lg transition mr-10"
               onClick={() => {
                 setResultStatus(null);
                 setResultMessage("");
@@ -200,6 +202,12 @@ export default function BookparkingContent() {
             >
               Book Another
             </button>
+      
+            <Link href= "/user-app/home" className="mt-4 inline-block px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-teal-500 text-white shadow hover:shadow-lg transition">
+              Go to Home
+            </Link>
+           
+
           </div>
         )}
       </div>
