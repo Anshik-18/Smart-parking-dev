@@ -14,6 +14,7 @@
     "@prisma/client": "^6.13.0",
     "@react-google-maps/api": "^2.20.7",
     "bcryptjs": "^3.0.2",
+    "lucide-react": "^0.539.0",
     "next": "15.4.5",
     "next-auth": "^4.24.11",
     "prisma": "^6.13.0",

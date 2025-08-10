@@ -6,8 +6,9 @@ import SearchBox from "../../../../components/searchboxwrapper";
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
   const userid = session?.user?.id || "";
-
-  const booking = await db.parkings.findFirst({
+  let booking
+try{
+   booking = await db.parkings.findFirst({
     where: {
       userid: Number(userid),
       status: { in: ["Pre_booked", "Parked"] },
@@ -16,6 +17,18 @@ export default async function HomePage() {
       parkingslot: true,
     },
   });
+} catch (error) {
+  console.error("Error fetching booking:", error);
+  return (
+    <div className="min-h-screen p-4 flex flex-col items-center justify-center text-center space-y-4">
+      <span className="text-6xl text-red-500">⚠️</span>
+      <h2 className="text-2xl font-semibold text-red-600">Oops! Something went wrong.</h2>
+      <p className="text-gray-700 max-w-md">
+        We were unable to fetch your booking information. Please try refreshing the page or come back later.
+      </p>
+      </div>
+)
+}
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 space-y-6">
@@ -27,9 +40,9 @@ export default async function HomePage() {
         <h2 className="text-xl font-semibold mb-2 text-black">Booked Slot</h2>
         {booking ? (
           <div className="text-black">
-            <div>📍 {booking.parkingslot.Adress}</div>
+            <div>📍 {booking?.parkingslot.Adress}</div>
             <div className="text-sm text-gray-600">
-              {new Date(booking.starttime).toLocaleString()}
+              {new Date(booking?.starttime).toLocaleString()}
             </div>
           </div>
         ) : (

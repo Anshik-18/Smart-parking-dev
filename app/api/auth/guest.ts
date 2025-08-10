@@ -1,0 +1,29 @@
+// src/pages/api/auth/guest.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { userId, merchantId } = req.body;
+    
+    // Create a mock session for guest user
+    const guestSession = {
+      user: {
+        id: userId,
+        email: 'guest@example.com',
+        merchantId: merchantId,
+        userType: 'guest'
+      }
+    };
+    
+    res.status(200).json({ success: true, session: guestSession });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create guest session' });
+  }
+}

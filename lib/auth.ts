@@ -43,8 +43,6 @@ export const authOptions = {
           // Register new user
           const hashedPassword = await bcrypt.hash(credentials.password, 10);
 
-
-
           const newUser = await db.user.create({
             data: {
               number: credentials.phone,
@@ -70,27 +68,48 @@ export const authOptions = {
         }
       },
     }),
+    // Add Guest Provider
+    CredentialsProvider({
+      id: "guest",
+      name: "Guest",
+      credentials: {
+        isGuest: { label: "Guest", type: "hidden" }
+      },
+      async authorize(credentials: any) {
+        // Check if this is a guest login request
+        if (credentials?.isGuest === "true") {
+          return {
+            id: "20",
+            email: "guest@example.com",
+            merchantId: "20",
+            userType: "guest"
+          };
+        }
+        return null;
+      },
+    }),
   ],
-  // pages: { 
-  //   signIn: "api/auth/signin", // 
-  // },
+  
+  pages: { 
+    signIn: "/auth/signin", // Enable custom signin page
+  },
 
   secret: process.env.JWT_SECRET || "secret",
 
-callbacks: {
-  async jwt({ token, user }:any) {
-    if (user) {
-      token.sub = user.id;
-      token.merchantId = user.merchantId; 
-    }
-    return token;
+  callbacks: {
+    async jwt({ token, user }: any) {
+      if (user) {
+        token.sub = user.id;
+        token.merchantId = user.merchantId; 
+        token.userType = user.userType || "user";
+      }
+      return token;
+    },
+    async session({ token, session }: any) {
+      session.user.id = token.sub;
+      session.user.merchantId = token.merchantId;
+      session.user.userType = token.userType || "user";
+      return session;
+    },
   },
-  async session({ token, session }:any) {
-    session.user.id = token.sub;
-    session.user.merchantId = token.merchantId;
-    session.user.userType = "user";
-    return session;
-  },
-},
-
 };
