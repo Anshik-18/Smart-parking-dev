@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-// import { Textinput } from "@repo/ui/textinput";
+import Link from "next/link";
 import LocationPicker from "../../../components/locationpicker";
 
 export default function CreateLot() {
@@ -235,12 +235,26 @@ export default function CreateLot() {
 
             {/* Result Message */}
             {parkinglotresult && (
-              <div className={`mt-6 p-4 rounded-xl border-2 ${
-                parkinglotresult.includes('wrong') || parkinglotresult.includes('error')
-                  ? 'bg-red-50 border-red-200 text-red-800'
-                  : 'bg-green-50 border-green-200 text-green-800'
-              }`}>
-                <span className="font-medium">{parkinglotresult}</span>
+              <div className="space-y-4">
+                <div className={`p-4 rounded-xl border-2 ${
+                  parkinglotresult.includes('wrong') || parkinglotresult.includes('error')
+                    ? 'bg-red-50 border-red-200 text-red-800'
+                    : 'bg-green-50 border-green-200 text-green-800'
+                }`}>
+                  <span className="font-medium">{parkinglotresult}</span>
+                </div>
+                
+                {/* Go Home Button - only show on success */}
+                {!parkinglotresult.includes('wrong') && !parkinglotresult.includes('error') && (
+                  <Link href="/merchant-app/home">
+                    <button className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl flex items-center justify-center space-x-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                      <span>Go to Dashboard</span>
+                    </button>
+                  </Link>
+                )}
               </div>
             )}
           </div>
