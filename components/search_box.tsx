@@ -1,8 +1,11 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Autocomplete } from "@react-google-maps/api";
+import { Autocomplete, useLoadScript } from "@react-google-maps/api";
+import SimpleSearchBox from "./Simplesearchbox";
+const libraries: ("places")[] = ["places"];
 
 interface SearchBoxProps {
   onSearch?: (place: string, lat: number, lng: number) => void;
@@ -25,6 +28,13 @@ export default function SearchBox({
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Load Google Maps script with error handling
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    libraries: libraries,
+    preventGoogleFontsLoading: true,
+  });
+
   // Initialize input value from URL params
   useEffect(() => {
     const searchQuery = searchParams.get("search") || searchParams.get("place") || "";
@@ -34,13 +44,16 @@ export default function SearchBox({
   }, [searchParams, initialValue]);
 
   const onLoad = useCallback((auto: google.maps.places.Autocomplete) => {
-    // Configure autocomplete options for better results
-    auto.setOptions({
-      types: ['establishment', 'geocode'],
-      componentRestrictions: { country: 'in' }, // Restrict to India
-      fields: ['formatted_address', 'geometry', 'name', 'place_id', 'types']
-    });
-    setAutocomplete(auto);
+    try {
+      auto.setOptions({
+        types: ['establishment', 'geocode'],
+        componentRestrictions: { country: 'in' },
+        fields: ['formatted_address', 'geometry', 'name', 'place_id', 'types']
+      });
+      setAutocomplete(auto);
+    } catch (error) {
+      console.error("Error configuring autocomplete:", error);
+    }
   }, []);
 
   const handlePlaceSelect = useCallback(async () => {
@@ -60,69 +73,113 @@ export default function SearchBox({
       const lng = place.geometry.location.lng();
       const name = place.formatted_address || place.name || input;
 
-      // Update input with selected place name
       setInput(name);
 
-      // Call parent callback if provided
       if (onSearch) {
         onSearch(name, lat, lng);
       } else {
-        // Default navigation behavior
         router.push(`/user-app/search-result?lat=${lat}&lng=${lng}&search=${encodeURIComponent(name)}&place=${encodeURIComponent(name)}`);
       }
     } catch (error) {
       console.error("Error selecting place:", error);
-      alert("Error selecting location. Please try again.");
+      handleManualSearch();
     } finally {
       setIsSearching(false);
     }
   }, [autocomplete, input, onSearch, router]);
 
   const handleManualSearch = useCallback(() => {
-    if (!input.trim() || !window.google) return;
+    if (!input.trim()) return;
 
     setIsSearching(true);
     
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ 
-      address: input,
-      componentRestrictions: { country: 'IN' }
-    }, (results, status) => {
+    // If Google Maps is not loaded, do simple navigation
+    if (!isLoaded || loadError) {
+      const searchQuery = encodeURIComponent(input.trim());
+      router.push(`/user-app/search-result?search=${searchQuery}&q=${searchQuery}`);
       setIsSearching(false);
-      
-      if (status === "OK" && results && results[0]) {
-        const location = results[0].geometry.location;
-        const name = results[0].formatted_address;
+      return;
+    }
+
+    // Try geocoding if Google Maps is available
+    if (window.google && window.google.maps) {
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ 
+        address: input,
+        componentRestrictions: { country: 'IN' }
+      }, (results, status) => {
+        setIsSearching(false);
         
-        if (onSearch) {
-          onSearch(name, location.lat(), location.lng());
+        if (status === "OK" && results && results[0]) {
+          const location = results[0].geometry.location;
+          const name = results[0].formatted_address;
+          
+          if (onSearch) {
+            onSearch(name, location.lat(), location.lng());
+          } else {
+            router.push(`/user-app/search-result?lat=${location.lat()}&lng=${location.lng()}&search=${encodeURIComponent(input)}&place=${encodeURIComponent(name)}`);
+          }
         } else {
-          router.push(`/user-app/search-result?lat=${location.lat()}&lng=${location.lng()}&search=${encodeURIComponent(input)}&place=${encodeURIComponent(name)}`);
+          // Fallback to simple search
+          const searchQuery = encodeURIComponent(input.trim());
+          router.push(`/user-app/search-result?search=${searchQuery}&q=${searchQuery}`);
         }
-      } else {
-        alert("Location not found! Please try a different search term.");
-      }
-    });
-  }, [input, onSearch, router]);
+      });
+    } else {
+      // Fallback if geocoder is not available
+      const searchQuery = encodeURIComponent(input.trim());
+      router.push(`/user-app/search-result?search=${searchQuery}&q=${searchQuery}`);
+      setIsSearching(false);
+    }
+  }, [input, onSearch, router, isLoaded, loadError]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      
-      // If autocomplete dropdown is open, let it handle the selection
-      if (autocomplete && inputRef.current) {
-        // Small delay to allow autocomplete to process
-        setTimeout(handleManualSearch, 100);
+      if (isLoaded && !loadError && autocomplete) {
+        setTimeout(handlePlaceSelect, 100);
       } else {
         handleManualSearch();
       }
     }
-  }, [autocomplete, handleManualSearch]);
+  }, [autocomplete, handlePlaceSelect, handleManualSearch, isLoaded, loadError]);
 
   const clearSearch = useCallback(() => {
     setInput("");
     inputRef.current?.focus();
   }, []);
+
+  // Show error state
+  if (loadError) {
+    console.error("Google Maps failed to load:", loadError);
+    // Fallback to simple search box
+    return (
+      <SimpleSearchBox 
+        onSearch={onSearch ? (query) => onSearch(query, 0, 0) : undefined}
+        className={className}
+        placeholder={placeholder}
+      />
+    );
+  }
+
+  // Show loading state
+  if (!isLoaded) {
+    return (
+      <div className={`relative max-w-2xl mx-auto ${className}`}>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Loading search..."
+            disabled
+            className="w-full pl-12 pr-24 py-4 rounded-2xl border-2 border-gray-200 shadow-lg text-lg text-gray-400 bg-gray-100"
+          />
+          <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative max-w-2xl mx-auto ${className}`}>
@@ -200,11 +257,11 @@ export default function SearchBox({
         </Autocomplete>
       </div>
 
-      {/* Recent Searches or Popular Locations (Optional Enhancement) */}
+      {/* Popular Locations */}
       {input.length === 0 && (
         <div className="mt-2 text-center">
           <div className="flex flex-wrap justify-center gap-2 mt-3">
-            {['Connaught Place', 'India Gate', 'Red Fort', 'Airport'].map((location) => (
+            {['Connaught Place', 'India Gate', 'Red Fort', 'Karol Bagh'].map((location) => (
               <button
                 key={location}
                 onClick={() => setInput(location)}
