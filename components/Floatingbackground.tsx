@@ -2,14 +2,18 @@
 import { useEffect, useRef } from 'react';
 
 export default function FloatingBackground() {
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return; // Early return if canvas is null
+    
     const ctx = canvas.getContext('2d');
+    if (!ctx) return; // Early return if context is null
     
     // Set canvas size
     const resizeCanvas = () => {
+      if (!canvas) return;
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
@@ -28,6 +32,8 @@ export default function FloatingBackground() {
     }));
 
     const animate = () => {
+      if (!canvas || !ctx) return;
+      
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       particles.forEach(particle => {
@@ -51,7 +57,9 @@ export default function FloatingBackground() {
     
     animate();
     
-    return () => window.removeEventListener('resize', resizeCanvas);
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+    };
   }, []);
 
   return (
