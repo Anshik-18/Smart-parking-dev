@@ -40,6 +40,7 @@ export async function POST(req:Request){
            select:{
                 id:true,
                 status:true,
+                parkingslot:true
               },
               where:{
                 id:bookingId,
@@ -51,6 +52,28 @@ export async function POST(req:Request){
                totaltime: totalTimeStr
            }
         })
+        const parkinglotid = response.parkingslot.id;
+                let bool = true;
+                if(!response.parkingslot.isempty){
+        
+                }
+                const updateparkinglot = await db.parkinglot.update({
+                    where:{
+                        id:parkinglotid
+                    },
+                    data:{
+                          vacantslots:{
+                        increment:1
+                    },
+                    occupiedslots:{
+                        decrement:1
+                    },
+                    isempty:{
+                        set:true
+                    }
+                    
+                    }
+                })
         if(response.status ==="Completed"){
             return new Response(JSON.stringify({ message: 'Booking checked out successfully' }), { status: 200 })
         }

@@ -187,7 +187,7 @@ export default async function Home() {
               <Link href="/merchant-app/Settings">
                 <button className="bg-gray-600 hover:bg-gray-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
                   ⚙️
-                </button>
+                </button> 
               </Link>
             </div>
           </div>

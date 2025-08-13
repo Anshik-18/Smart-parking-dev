@@ -14,6 +14,7 @@ export async function POST(req:Request){
            select:{
                 id:true,
                 status:true,
+                parkingslot:true
               },
               where:{
                 id:bookingId,
@@ -22,6 +23,28 @@ export async function POST(req:Request){
            data:{
                status: 'Cancelled'
            }
+        })
+        const parkinglotid = response.parkingslot.id;
+        let bool = true;
+        if(!response.parkingslot.isempty){
+
+        }
+        const updateparkinglot = await db.parkinglot.update({
+            where:{
+                id:parkinglotid
+            },
+            data:{
+                  vacantslots:{
+                increment:1
+            },
+            occupiedslots:{
+                decrement:1
+            },
+            isempty:{
+                set:true
+            }
+            
+            }
         })
         if(response.status ==="Cancelled"){
             return new Response(JSON.stringify({ message: 'Booking cancelled successfully' }), { status: 200 })
