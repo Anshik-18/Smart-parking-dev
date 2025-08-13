@@ -89,6 +89,8 @@ export default async function Home() {
         
         {/* Header */}
         <div className="text-center mb-10">
+          
+
           <h1 className="text-4xl font-bold text-gray-900 mb-3 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Parking Management Dashboard
           </h1>
@@ -169,14 +171,27 @@ export default async function Home() {
 
         {/* Individual Parking Lots */}
         <div className="space-y-6">
+                  <div className="space-y-6">
           <div className="flex items-center justify-between">
+            {/* Left side - Heading */}
             <h2 className="text-2xl font-bold text-gray-900">Your Parking Facilities</h2>
-            <Link href="/merchant-app/CreateLot">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                Create New Lot
-              </button>
-            </Link>
+
+            {/* Right side - Buttons */}
+            <div className="flex items-center gap-4">
+              <Link href="/merchant-app/CreateLot">
+                <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                  Create New Lot
+                </button>
+              </Link>
+
+              <Link href="/merchant-app/Settings">
+                <button className="bg-gray-600 hover:bg-gray-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                  ⚙️
+                </button>
+              </Link>
+            </div>
           </div>
+        </div>
 
           {parkinglots.map((parkinglot) => (
             <div key={parkinglot.id} className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
