@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
+import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api";
 import { useRouter, useSearchParams } from "next/navigation";
 import SearchBox from "@/components/search_box";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { Heart, HeartOff } from "lucide-react";
 
 const containerStyle = {
   width: "100%",
@@ -51,14 +53,31 @@ export default function SearchResult({ place }: SearchBoxProps) {
   const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [favoriteLoading, setFavoriteLoading] = useState<string | null>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-    libraries: ["places"],
-  });
+  const { isLoaded, loadError } = useGoogleMaps();
+
+  // Load favorites from localStorage on component mount
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('parkingFavorites');
+    if (savedFavorites) {
+      try {
+        const favoriteIds = JSON.parse(savedFavorites);
+        setFavorites(new Set(favoriteIds));
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+      }
+    }
+  }, []);
+
+  // Save favorites to localStorage whenever favorites change
+  useEffect(() => {
+    localStorage.setItem('parkingFavorites', JSON.stringify(Array.from(favorites)));
+  }, [favorites]);
 
   // Update coordinates when URL params change
   useEffect(() => {
@@ -98,6 +117,43 @@ export default function SearchResult({ place }: SearchBoxProps) {
       fetchNearbyParking(lat, lng);
     }
   }, [lat, lng, fetchNearbyParking]);
+
+  // Handle adding/removing favorites
+  const toggleFavorite = useCallback(async (lotId: string) => {
+    setFavoriteLoading(lotId);
+    
+    try {
+      const isFavorite = favorites.has(lotId);
+      const method = isFavorite ? 'DELETE' : 'POST';
+      
+      const response = await fetch('/api/favorites', {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ lotId }),
+      });
+
+      if (response.ok) {
+        setFavorites(prev => {
+          const newFavorites = new Set(prev);
+          if (isFavorite) {
+            newFavorites.delete(lotId);
+          } else {
+            newFavorites.add(lotId);
+          }
+          return newFavorites;
+        });
+      } else {
+        throw new Error('Failed to update favorite');
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      // You could add a toast notification here
+    } finally {
+      setFavoriteLoading(null);
+    }
+  }, [favorites]);
 
   // Memoize available and full parking lots for better performance
   const { availableLots, fullLots } = useMemo(() => {
@@ -231,14 +287,33 @@ export default function SearchResult({ place }: SearchBoxProps) {
                     <InfoWindow onCloseClick={() => setActiveMarker(null)}>
                       <div className="max-w-xs">
                         <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-bold text-gray-900 text-sm">{lot.Name}</h3>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            lot.isempty 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-red-100 text-red-700'
-                          }`}>
-                            {lot.isempty ? 'Available' : 'Full'}
-                          </span>
+                          <h3 className="font-bold text-gray-900 text-sm pr-2">{lot.Name}</h3>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite(lot.id);
+                              }}
+                              disabled={favoriteLoading === lot.id}
+                              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                              title={favorites.has(lot.id) ? "Remove from favorites" : "Add to favorites"}
+                            >
+                              {favoriteLoading === lot.id ? (
+                                <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                              ) : favorites.has(lot.id) ? (
+                                <Heart className="w-4 h-4 text-red-500 fill-current" />
+                              ) : (
+                                <HeartOff className="w-4 h-4 text-gray-400" />
+                              )}
+                            </button>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              lot.isempty 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {lot.isempty ? 'Available' : 'Full'}
+                            </span>
+                          </div>
                         </div>
                         <p className="text-xs text-gray-600 mb-2">{lot.Adress}</p>
                         <div className="space-y-1 text-xs">
@@ -330,6 +405,9 @@ export default function SearchResult({ place }: SearchBoxProps) {
                         key={`available-${lot.id}-${i}`}
                         lot={lot}
                         onBook={handleBooking}
+                        onToggleFavorite={toggleFavorite}
+                        isFavorite={favorites.has(lot.id)}
+                        favoriteLoading={favoriteLoading === lot.id}
                         available={true}
                       />
                     ))}
@@ -352,6 +430,9 @@ export default function SearchResult({ place }: SearchBoxProps) {
                         key={`full-${lot.id}-${i}`}
                         lot={lot}
                         onBook={handleBooking}
+                        onToggleFavorite={toggleFavorite}
+                        isFavorite={favorites.has(lot.id)}
+                        favoriteLoading={favoriteLoading === lot.id}
                         available={false}
                       />
                     ))}
@@ -366,33 +447,52 @@ export default function SearchResult({ place }: SearchBoxProps) {
   );
 }
 
-// Separate component for parking cards to improve performance
+// Enhanced parking card component with favorites
 interface ParkingCardProps {
   lot: ParkingLot;
   onBook: (lotId: string) => void;
+  onToggleFavorite: (lotId: string) => void;
+  isFavorite: boolean;
+  favoriteLoading: boolean;
   available: boolean;
 }
 
-function ParkingCard({ lot, onBook, available }: ParkingCardProps) {
+function ParkingCard({ lot, onBook, onToggleFavorite, isFavorite, favoriteLoading, available }: ParkingCardProps) {
   return (
     <div className={`bg-white border-2 rounded-2xl p-6 shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl ${
       available 
         ? 'border-green-200 hover:border-green-300' 
         : 'border-red-200 hover:border-red-300 opacity-75'
     }`}>
-      {/* Header with status */}
+      {/* Header with status and favorite button */}
       <div className="flex justify-between items-start mb-4">
-        <div>
+        <div className="flex-1 pr-2">
           <h3 className="text-xl font-bold text-gray-900 mb-1">{lot.Name}</h3>
           <p className="text-sm text-gray-600 line-clamp-2">{lot.Adress}</p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-bold flex-shrink-0 ${
-          available 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
-          {available ? 'Available' : 'Full'}
-        </span>
+        <div className="flex items-center space-x-2 flex-shrink-0">
+          <button
+            onClick={() => onToggleFavorite(lot.id)}
+            disabled={favoriteLoading}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            {favoriteLoading ? (
+              <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+            ) : isFavorite ? (
+              <Heart className="w-5 h-5 text-red-500 fill-current" />
+            ) : (
+              <HeartOff className="w-5 h-5 text-gray-400 hover:text-red-400" />
+            )}
+          </button>
+          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+            available 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-red-100 text-red-800'
+          }`}>
+            {available ? 'Available' : 'Full'}
+          </span>
+        </div>
       </div>
 
       {/* Details Grid */}

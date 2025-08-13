@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Autocomplete, useLoadScript } from "@react-google-maps/api";
 import SimpleSearchBox from "./Simplesearchbox";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 const libraries: ("places")[] = ["places"];
 
 interface SearchBoxProps {
@@ -29,11 +30,7 @@ export default function SearchBox({
   const searchParams = useSearchParams();
 
   // Load Google Maps script with error handling
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: libraries,
-    preventGoogleFontsLoading: true,
-  });
+const { isLoaded, loadError } = useGoogleMaps();
 
   // Initialize input value from URL params
   useEffect(() => {

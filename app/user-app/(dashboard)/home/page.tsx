@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import SearchBox from "../../../../components/searchboxwrapper";
 import EnhancedBookingCard from "../../../../components/enhancedbookingcard";
 import FloatingBackground from "../../../../components/Floatingbackground";
-import StatsCards from "../../../../components/statecard";
+
 import QuickActions from "../../../../components/quickactions";
 
 export default async function HomePage() {
@@ -18,7 +18,7 @@ export default async function HomePage() {
     booking = await db.parkings.findFirst({
       where: {
         userid: Number(userid),
-        status: { in: ["Pre_booked", "Parked"] },
+        status: { in: ["Pre_booked", "Parked"] }, 
       },
       include: {
         parkingslot: true,

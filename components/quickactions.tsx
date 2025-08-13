@@ -1,34 +1,38 @@
 "use client";
+import { useRouter } from "next/navigation";
+
+
 
 export default function QuickActions() {
+  const router = useRouter();
   const actions = [
     {
       icon: "🔍",
       label: "Find Nearby",
       description: "Discover parking spots around you",
       color: "from-blue-500 to-purple-500",
-      action: () => console.log("Find nearby clicked")
+      action: () => router.push("/user-app/nearbyparking")
     },
     {
       icon: "⭐",
       label: "Favorites",
       description: "Your saved parking locations",
       color: "from-pink-500 to-rose-500",
-      action: () => console.log("Favorites clicked")
+      action: () => router.push("/user-app/favorites")
     },
     {
       icon: "📊",
       label: "History",
       description: "View your booking history",
       color: "from-emerald-500 to-teal-500",
-      action: () => console.log("History clicked")
+      action: () => router.push("/user-app/history")
     },
     {
       icon: "⚙️",
       label: "Settings",
       description: "Manage your preferences",
       color: "from-gray-500 to-gray-600",
-      action: () => console.log("Settings clicked")
+      action: () => router.push("/user-app/settings")
     }
   ];
 

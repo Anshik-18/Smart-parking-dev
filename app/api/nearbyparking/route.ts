@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
     const rawResults = await db.$queryRaw<ParkingLot[]>`
       SELECT * FROM parkinglot
-      WHERE earth_box(ll_to_earth(${lat}, ${lng}), ${5000}) 
+      WHERE earth_box(ll_to_earth(${lat}, ${lng}), ${30000}) 
         @> ll_to_earth(parkinglot.latitude, parkinglot.longitude)
     `;
 

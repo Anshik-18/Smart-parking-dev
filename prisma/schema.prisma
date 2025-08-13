@@ -24,6 +24,8 @@ model User {
   cardetails        cardetails[]
   parking           parkings[]
   notifications     notifications[]
+  favorites   parkinglot[] @relation("UserFavorites")
+
 }
 
 model merchant{
@@ -96,6 +98,7 @@ model parkinglot{
   occupiedslots           Int     @default(0)
   vacantslots             Int 
   isempty                 Boolean      @default(true)
+   favorites              User[] @relation("UserFavorites")
 
 }
 
